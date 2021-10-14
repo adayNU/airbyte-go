@@ -10,12 +10,12 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-func Run(s Source) {
+func Run(s Source) error {
 	var opts = &protocol.Options{}
 
 	var _, err = flags.Parse(opts)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	var out = &types.AirbyteMessage{}
@@ -28,7 +28,7 @@ func Run(s Source) {
 	case protocol.Check:
 		var cfg, err = opts.ParsedConfig()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		out.Type = types.ConnectionStatus
@@ -36,7 +36,7 @@ func Run(s Source) {
 	case protocol.Discover:
 		var cfg, err = opts.ParsedConfig()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		out.Type = types.Catalog
@@ -44,19 +44,19 @@ func Run(s Source) {
 	case protocol.Read:
 		var cfg, err = opts.ParsedConfig()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		var catalog *types.ConfiguredAirbyteCatalog
 		catalog, err = opts.ParsedCatalog()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		var state types.JSONData
 		state, err = opts.ParsedState()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		var messages = s.Read(cfg, catalog, state)
@@ -68,12 +68,12 @@ func Run(s Source) {
 					var b []byte
 					b, err = json.Marshal(msg)
 					if err != nil {
-						panic(err)
+						return nil
 					}
 
 					_, err = w.Write(b)
 					if err != nil {
-						panic(err)
+						return nil
 					}
 				} else {
 					break
@@ -81,7 +81,7 @@ func Run(s Source) {
 			}
 		}
 
-		return
+		return nil
 	default:
 		panic("unknown command")
 	}
@@ -94,4 +94,6 @@ func Run(s Source) {
 
 	_, _ = w.Write(b)
 	_ = w.Flush()
+
+	return nil
 }

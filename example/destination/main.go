@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/adayNU/airbyte-go/connection/destination"
 	"github.com/adayNU/airbyte-go/types"
@@ -42,5 +43,8 @@ func (m *mockDestination) Write(_ types.JSONData, _ *types.ConfiguredAirbyteCata
 }
 
 func main() {
-	destination.Run(&mockDestination{})
+	var err = destination.Run(&mockDestination{})
+	if err != nil {
+		log.Fatal(err)
+	}
 }

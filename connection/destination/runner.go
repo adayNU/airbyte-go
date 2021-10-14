@@ -10,12 +10,12 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-func Run(d Destination) {
+func Run(d Destination) error {
 	var opts = &protocol.Options{}
 
 	var _, err = flags.Parse(opts)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	var out = &types.AirbyteMessage{}
@@ -27,7 +27,7 @@ func Run(d Destination) {
 	case protocol.Check:
 		var cfg, err = opts.ParsedConfig()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		out.Type = types.ConnectionStatus
@@ -35,13 +35,13 @@ func Run(d Destination) {
 	case protocol.Write:
 		var cfg, err = opts.ParsedConfig()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		var catalog *types.ConfiguredAirbyteCatalog
 		catalog, err = opts.ParsedCatalog()
 		if err != nil {
-			panic(err)
+			return err
 		}
 
 		var messages = make(chan *types.AirbyteMessage)
@@ -59,7 +59,7 @@ func Run(d Destination) {
 				<-done
 
 				if err = scanner.Err(); err != nil {
-					panic(err)
+					return err
 				}
 
 				break
@@ -67,13 +67,13 @@ func Run(d Destination) {
 
 			err = json.Unmarshal(scanner.Bytes(), msg)
 			if err != nil {
-				panic(err)
+				return err
 			}
 
 			messages <- msg
 		}
 
-		return
+		return nil
 	default:
 		panic("unknown command")
 	}
@@ -81,10 +81,12 @@ func Run(d Destination) {
 	var b []byte
 	b, err = json.Marshal(out)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	var w = bufio.NewWriter(os.Stdout)
 	_, _ = w.Write(b)
 	_ = w.Flush()
+
+	return nil
 }
