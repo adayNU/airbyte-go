@@ -89,7 +89,7 @@ func Run(s Source) error {
 	var b []byte
 	b, err = json.Marshal(out)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	_, _ = w.Write(b)
