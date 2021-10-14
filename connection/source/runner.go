@@ -1,4 +1,4 @@
-package destination
+package source
 
 import (
 	"bufio"
@@ -10,7 +10,7 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
-func Run(d Destination) {
+func Run(s Source) {
 	var opts = &protocol.Options{}
 
 	var _, err = flags.Parse(opts)
@@ -19,11 +19,12 @@ func Run(d Destination) {
 	}
 
 	var out = &types.AirbyteMessage{}
+	var w = bufio.NewWriter(os.Stdout)
 
 	switch os.Args[1] {
 	case protocol.Spec:
 		out.Type = types.Spec
-		out.Spec = d.Spec()
+		out.Spec = s.Spec()
 	case protocol.Check:
 		var cfg, err = opts.ParsedConfig()
 		if err != nil {
@@ -31,8 +32,16 @@ func Run(d Destination) {
 		}
 
 		out.Type = types.ConnectionStatus
-		out.ConnectionStatus = d.Check(cfg)
-	case protocol.Write:
+		out.ConnectionStatus = s.Check(cfg)
+	case protocol.Discover:
+		var cfg, err = opts.ParsedConfig()
+		if err != nil {
+			panic(err)
+		}
+
+		out.Type = types.Catalog
+		out.Catalog = s.Discover(cfg)
+	case protocol.Read:
 		var cfg, err = opts.ParsedConfig()
 		if err != nil {
 			panic(err)
@@ -44,33 +53,32 @@ func Run(d Destination) {
 			panic(err)
 		}
 
-		var messages = make(chan *types.AirbyteMessage)
-		var done = make(chan bool, 1)
+		var state types.JSONData
+		state, err = opts.ParsedState()
+		if err != nil {
+			panic(err)
+		}
 
-		go d.Write(cfg, catalog, messages, done)
+		var messages = s.Read(cfg, catalog, state)
 
-		var scanner = bufio.NewScanner(os.Stdin)
 		for {
-			var msg = &types.AirbyteMessage{}
+			select {
+			case msg, ok := <-messages:
+				if ok {
+					var b []byte
+					b, err = json.Marshal(msg)
+					if err != nil {
+						panic(err)
+					}
 
-			var ok = scanner.Scan()
-			if !ok {
-				close(messages)
-				<-done
-
-				if err = scanner.Err(); err != nil {
-					panic(err)
+					_, err = w.Write(b)
+					if err != nil {
+						panic(err)
+					}
+				} else {
+					break
 				}
-
-				break
 			}
-
-			err = json.Unmarshal(scanner.Bytes(), msg)
-			if err != nil {
-				panic(err)
-			}
-
-			messages <- msg
 		}
 
 		return
@@ -84,7 +92,6 @@ func Run(d Destination) {
 		panic(err)
 	}
 
-	var w = bufio.NewWriter(os.Stdout)
 	_, _ = w.Write(b)
 	_ = w.Flush()
 }
