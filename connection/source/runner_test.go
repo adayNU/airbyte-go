@@ -9,31 +9,58 @@ import (
 	"gopkg.in/check.v1"
 )
 
-type RunnerSuite struct{}
+type RunnerSuite struct {
+	r, w *os.File
+	old  *os.File
+}
+
+func (r *RunnerSuite) SetUpTest(c *check.C) {
+	r.old = os.Stdout
+
+	var err error
+	r.r, r.w, err = os.Pipe()
+	c.Assert(err, check.IsNil)
+
+	os.Stdout = r.w
+}
+
+func (r *RunnerSuite) TearDownTest(_ *check.C) {
+	r.ResetStdout()
+}
+
+func (r *RunnerSuite) ResetStdout() {
+	os.Stdout = r.old
+}
 
 func (r *RunnerSuite) TestSpec(c *check.C) {
 	os.Args = []string{"cmd", "spec"}
 
-	var std = os.Stdout
-	defer func() {
-		os.Stdout = std
-	}()
-
-	var read, write, err = os.Pipe()
-	c.Assert(err, check.IsNil)
-
-	os.Stdout = write
-
-	err = Run(&mockSource{})
+	var err = Run(&mockSource{})
 	c.Check(err, check.IsNil)
 
-	_ = write.Close()
+	_ = r.w.Close()
 
 	var got []byte
-	got, err = ioutil.ReadAll(read)
-	os.Stdout = std
+	got, err = ioutil.ReadAll(r.r)
+	r.ResetStdout()
+
+	c.Check(err, check.IsNil)
+	c.Check(string(got), check.Equals, `{"Type":3,"Spec":{"DocumentationURL":"","ChangelogURL":"","ConnectionSpecification":null,"SupportsIncremental":false,"SupportsNormalization":false,"SupportsDBT":false,"SupportedDestinationSyncModes":null,"AuthSpecification":null},"ConnectionStatus":null,"Catalog":null,"Record":null,"State":null}`+"\n")
+}
+
+func (r *RunnerSuite) TestCheck(c *check.C) {
+	os.Args = []string{"cmd", "check", "--config", "test"}
+
+	var err = Run(&mockSource{})
 	c.Check(err, check.IsNil)
 
+	_ = r.w.Close()
+
+	var got []byte
+	got, err = ioutil.ReadAll(r.r)
+	r.ResetStdout()
+
+	c.Check(err, check.IsNil)
 	c.Check(string(got), check.Equals, `{"Type":3,"Spec":{"DocumentationURL":"","ChangelogURL":"","ConnectionSpecification":null,"SupportsIncremental":false,"SupportsNormalization":false,"SupportsDBT":false,"SupportedDestinationSyncModes":null,"AuthSpecification":null},"ConnectionStatus":null,"Catalog":null,"Record":null,"State":null}`+"\n")
 }
 
