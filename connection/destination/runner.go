@@ -2,6 +2,7 @@ package destination
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"os"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
+// Run will give the appropriate response for the
+// given command for Destination |d|.
 func Run(d Destination) error {
 	var opts = &protocol.Options{}
 
@@ -47,7 +50,9 @@ func Run(d Destination) error {
 		var messages = make(chan *types.AirbyteMessage)
 		var done = make(chan bool, 1)
 
-		go d.Write(cfg, catalog, messages, done)
+		var ctx = context.Background()
+
+		go d.Write(ctx, cfg, catalog, messages, done)
 
 		var scanner = bufio.NewScanner(os.Stdin)
 		for {
@@ -56,6 +61,9 @@ func Run(d Destination) error {
 			var ok = scanner.Scan()
 			if !ok {
 				close(messages)
+				// TODO(Andy): Might want some sort of timeout for Write
+				// gracefully shutting down (i.e. a select on the done channel
+				// as well as a ticker).
 				<-done
 
 				if err = scanner.Err(); err != nil {
@@ -86,7 +94,5 @@ func Run(d Destination) error {
 
 	var w = bufio.NewWriter(os.Stdout)
 	_, _ = w.Write(b)
-	_ = w.Flush()
-
-	return nil
+	return w.Flush()
 }

@@ -2,6 +2,7 @@ package source
 
 import (
 	"bufio"
+	"context"
 	"encoding/json"
 	"os"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/jessevdk/go-flags"
 )
 
+// Run will give the appropriate response for the
+// given command for Source |s|.
 func Run(s Source) error {
 	var opts = &protocol.Options{}
 
@@ -59,7 +62,9 @@ func Run(s Source) error {
 			return err
 		}
 
-		var messages = s.Read(cfg, catalog, state)
+		var ctx = context.Background()
+
+		var messages = s.Read(ctx, cfg, catalog, state)
 
 		for {
 			select {
@@ -81,7 +86,7 @@ func Run(s Source) error {
 			}
 		}
 
-		return nil
+		return w.Flush()
 	default:
 		panic("unknown command")
 	}
@@ -93,7 +98,5 @@ func Run(s Source) error {
 	}
 
 	_, _ = w.Write(b)
-	_ = w.Flush()
-
-	return nil
+	return w.Flush()
 }
