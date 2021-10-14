@@ -92,7 +92,6 @@ func Run(d Destination) error {
 		return err
 	}
 
-	var w = bufio.NewWriter(os.Stdout)
-	_, _ = w.Write(b)
-	return w.Flush()
+	_, err = os.Stdout.WriteString(string(b) + "\n")
+	return err
 }

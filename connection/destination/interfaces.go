@@ -8,7 +8,7 @@ import (
 
 type Destination interface {
 	Spec() *types.ConnectorSpecification
-	Check(types.JSONData) *types.AirbyteConnectionStatus
+	Check(config types.JSONData) *types.AirbyteConnectionStatus
 	// Write should read in the AirbyteMessages and write any that are of
 	// type AirbyteRecordMessage to the underlying data store. The destination
 	// should return an error if any of the messages it receives do not match
@@ -22,5 +22,5 @@ type Destination interface {
 	// On a cancelled context, Write should finish writing any messages already
 	// read from the message channel and then send on the done channel (and
 	// return context.Canceled).
-	Write(context.Context, types.JSONData, *types.ConfiguredAirbyteCatalog, <-chan *types.AirbyteMessage, chan<- bool) error
+	Write(ctx context.Context, config types.JSONData, catalog *types.ConfiguredAirbyteCatalog, messages <-chan *types.AirbyteMessage, done chan<- bool) error
 }

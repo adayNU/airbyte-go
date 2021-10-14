@@ -8,8 +8,8 @@ import (
 
 type Source interface {
 	Spec() *types.ConnectorSpecification
-	Check(types.JSONData) *types.AirbyteConnectionStatus
-	Discover(types.JSONData) *types.AirbyteCatalog
+	Check(config types.JSONData) *types.AirbyteConnectionStatus
+	Discover(config types.JSONData) *types.AirbyteCatalog
 	// Read reads data from the underlying data source and converts
 	// it into AirbyteRecordMessage (wrapped in an AirbyteMessage).
 	// It can optionally return AirbyteStateMessages, which is used to
@@ -28,5 +28,5 @@ type Source interface {
 	// It is Read's responsibility to close the returned channel to signal to
 	// there is no more data to read. Read should close the channel and return
 	// on a canceled context.
-	Read(context.Context, types.JSONData, *types.ConfiguredAirbyteCatalog, types.JSONData) <-chan types.AirbyteMessage
+	Read(ctx context.Context, config types.JSONData, catalog *types.ConfiguredAirbyteCatalog, state types.JSONData) <-chan types.AirbyteMessage
 }

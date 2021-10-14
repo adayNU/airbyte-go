@@ -1,7 +1,6 @@
 package source
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"os"
@@ -22,7 +21,6 @@ func Run(s Source) error {
 	}
 
 	var out = &types.AirbyteMessage{}
-	var w = bufio.NewWriter(os.Stdout)
 
 	switch os.Args[1] {
 	case protocol.Spec:
@@ -76,7 +74,7 @@ func Run(s Source) error {
 						return nil
 					}
 
-					_, err = w.Write(b)
+					_, err = os.Stdout.WriteString(string(b) + "\n")
 					if err != nil {
 						return nil
 					}
@@ -86,7 +84,7 @@ func Run(s Source) error {
 			}
 		}
 
-		return w.Flush()
+		return nil
 	default:
 		panic("unknown command")
 	}
@@ -97,6 +95,6 @@ func Run(s Source) error {
 		return err
 	}
 
-	_, _ = w.Write(b)
-	return w.Flush()
+	_, err = os.Stdout.WriteString(string(b) + "\n")
+	return err
 }
