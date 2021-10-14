@@ -86,9 +86,9 @@ func Run(d Destination) {
 		}
 
 		var messages = make(chan *types.AirbyteMessage)
-		defer close(messages)
+		var done = make(chan bool, 1)
 
-		go d.Write(cfg, catalog, messages)
+		go d.Write(cfg, catalog, messages, done)
 
 		var scanner = bufio.NewScanner(os.Stdin)
 		for {
@@ -96,9 +96,13 @@ func Run(d Destination) {
 
 			var ok = scanner.Scan()
 			if !ok {
+				close(messages)
+				<-done
+
 				if err = scanner.Err(); err != nil {
 					panic(err)
 				}
+
 				break
 			}
 

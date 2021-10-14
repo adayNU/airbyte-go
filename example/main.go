@@ -28,11 +28,15 @@ func (m *mockDestination) Check(types.JSONData) *types.AirbyteConnectionStatus {
 	}
 }
 
-func (m *mockDestination) Write(config types.JSONData, catalog *types.ConfiguredAirbyteCatalog, messages <-chan *types.AirbyteMessage) {
+func (m *mockDestination) Write(config types.JSONData, catalog *types.ConfiguredAirbyteCatalog, messages <-chan *types.AirbyteMessage, done chan<- bool) {
 	for {
 		select {
-		case foo := <-messages:
-			fmt.Println("test", foo)
+		case foo, ok := <-messages:
+			if ok {
+				fmt.Println("test", foo)
+			} else {
+				done <- true
+			}
 		}
 	}
 }
