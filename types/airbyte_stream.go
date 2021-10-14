@@ -1,5 +1,7 @@
 package types
 
+import "errors"
+
 type AirbyteCatalog struct {
 	Streams []AirbyteStream
 }
@@ -29,7 +31,9 @@ const (
 	AppendDedup
 )
 
-type ConfiguredAirbyteCatalog struct{}
+type ConfiguredAirbyteCatalog struct {
+	Streams []ConfiguredAirbyteStream
+}
 
 type ConfiguredAirbyteStream struct {
 	Stream              AirbyteStream
@@ -37,4 +41,18 @@ type ConfiguredAirbyteStream struct {
 	CursorField         []string
 	DestinationSyncMode DestinationSyncMode
 	PrimaryKey          [][]string
+}
+
+// Validate returns an error if |c| is invalid according to the
+// Airbyte Protocol.
+// https://github.com/airbytehq/airbyte/blob/62826f82fdb198785ec788b3da71c771d140d645/airbyte-protocol/models/src/main/resources/airbyte_protocol/airbyte_protocol.yaml#L173-L200
+func (c *ConfiguredAirbyteStream) Validate() error {
+	if c.SyncMode == Incremental && (c.CursorField == nil || len(c.CursorField) == 0) {
+		return errors.New("CursorField is required for sync mode INCREMENTAL")
+	}
+	if c.DestinationSyncMode == AppendDedup && (c.PrimaryKey == nil || len(c.PrimaryKey) == 0) {
+		return errors.New("DestinationSyncMode is required for destination sync mode APPEND_DEDUP")
+	}
+
+	return nil
 }

@@ -96,5 +96,6 @@ func Run(s Source) error {
 	}
 
 	_, err = os.Stdout.WriteString(string(b) + "\n")
+	os.Stdout.Close()
 	return err
 }
