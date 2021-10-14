@@ -6,6 +6,17 @@ type OAuth2Specification struct {
 	OAuthFlowOutputParameters [][]string
 }
 
+type AuthType int
+
+const (
+	OAuth2Dot0 AuthType = iota
+)
+
+type AuthSpecification struct {
+	Type                AuthType
+	OAuth2Specification *OAuth2Specification
+}
+
 type ConnectorSpecification struct {
 	DocumentationURL              string
 	ChangelogURL                  string
@@ -13,5 +24,6 @@ type ConnectorSpecification struct {
 	SupportsIncremental           bool
 	SupportsNormalization         bool
 	SupportsDBT                   bool
-	SupportedDestinationSyncModes DestinationSyncMode
+	SupportedDestinationSyncModes []DestinationSyncMode
+	AuthSpecification             *AuthSpecification
 }
