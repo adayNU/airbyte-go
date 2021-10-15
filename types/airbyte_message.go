@@ -13,9 +13,9 @@ const (
 
 type AirbyteMessage struct {
 	Type             MessageType
-	Spec             *ConnectorSpecification
-	ConnectionStatus *AirbyteConnectionStatus
-	Catalog          *AirbyteCatalog
-	Record           *AirbyteRecordMessage
-	State            *AirbyteStateMessage
+	Spec             *ConnectorSpecification  `json:"spec,omitempty"`
+	ConnectionStatus *AirbyteConnectionStatus `json:"connectionStatus,omitempty"`
+	Catalog          *AirbyteCatalog          `json:"catalog,omitempty"`
+	Record           *AirbyteRecordMessage    `json:"record,omitempty"`
+	State            *AirbyteStateMessage     `json:"state,omitempty"`
 }

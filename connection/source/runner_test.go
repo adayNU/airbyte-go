@@ -45,7 +45,7 @@ func (r *RunnerSuite) TestSpec(c *check.C) {
 	r.ResetStdout()
 
 	c.Check(err, check.IsNil)
-	c.Check(string(got), check.Equals, `{"Type":3,"Spec":{"DocumentationURL":"","ChangelogURL":"","ConnectionSpecification":null,"SupportsIncremental":false,"SupportsNormalization":false,"SupportsDBT":false,"SupportedDestinationSyncModes":null,"AuthSpecification":null},"ConnectionStatus":null,"Catalog":null,"Record":null,"State":null}`+"\n")
+	c.Check(string(got), check.Equals, `{"Type":3,"spec":{"DocumentationURL":"","ChangelogURL":"","ConnectionSpecification":null,"SupportsIncremental":false,"SupportsNormalization":false,"SupportsDBT":false,"SupportedDestinationSyncModes":null,"AuthSpecification":null}}`+"\n")
 }
 
 func (r *RunnerSuite) TestCheck(c *check.C) {
@@ -61,7 +61,7 @@ func (r *RunnerSuite) TestCheck(c *check.C) {
 	r.ResetStdout()
 
 	c.Check(err, check.IsNil)
-	c.Check(string(got), check.Equals, `{"Type":4,"Spec":null,"ConnectionStatus":{"Status":0,"Message":""},"Catalog":null,"Record":null,"State":null}`+"\n")
+	c.Check(string(got), check.Equals, `{"Type":4,"connectionStatus":{"Status":0,"Message":""}}`+"\n")
 }
 
 type mockSource struct{}
