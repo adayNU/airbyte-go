@@ -35,7 +35,7 @@ func (r *RunnerSuite) ResetStdout() {
 func (r *RunnerSuite) TestSpec(c *check.C) {
 	os.Args = []string{"cmd", "spec"}
 
-	var err = Run(&mockSource{})
+	var err = Run(&mockSource{}, &mockProtocol{})
 	c.Check(err, check.IsNil)
 
 	_ = r.w.Close()
@@ -51,7 +51,7 @@ func (r *RunnerSuite) TestSpec(c *check.C) {
 func (r *RunnerSuite) TestCheck(c *check.C) {
 	os.Args = []string{"cmd", "check", "--config", "test"}
 
-	var err = Run(&mockSource{})
+	var err = Run(&mockSource{}, &mockProtocol{})
 	c.Check(err, check.IsNil)
 
 	_ = r.w.Close()
@@ -61,7 +61,7 @@ func (r *RunnerSuite) TestCheck(c *check.C) {
 	r.ResetStdout()
 
 	c.Check(err, check.IsNil)
-	c.Check(string(got), check.Equals, `{"Type":3,"Spec":{"DocumentationURL":"","ChangelogURL":"","ConnectionSpecification":null,"SupportsIncremental":false,"SupportsNormalization":false,"SupportsDBT":false,"SupportedDestinationSyncModes":null,"AuthSpecification":null},"ConnectionStatus":null,"Catalog":null,"Record":null,"State":null}`+"\n")
+	c.Check(string(got), check.Equals, `{"Type":4,"Spec":null,"ConnectionStatus":{"Status":0,"Message":""},"Catalog":null,"Record":null,"State":null}`+"\n")
 }
 
 type mockSource struct{}
@@ -87,5 +87,13 @@ func (m *mockSource) Read(ctx context.Context, config types.JSONData, catalog *t
 	// Need to do better here.
 	return make(<-chan types.AirbyteMessage)
 }
+
+type mockProtocol struct{}
+
+func (m *mockProtocol) ParsedConfig() (types.JSONData, error) { return nil, nil }
+func (m *mockProtocol) ParsedCatalog() (*types.ConfiguredAirbyteCatalog, error) {
+	return &types.ConfiguredAirbyteCatalog{}, nil
+}
+func (m *mockProtocol) ParsedState() (types.JSONData, error) { return nil, nil }
 
 var _ = check.Suite(&RunnerSuite{})

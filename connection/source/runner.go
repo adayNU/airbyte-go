@@ -7,19 +7,11 @@ import (
 
 	"github.com/adayNU/airbyte-go/connection/protocol"
 	"github.com/adayNU/airbyte-go/types"
-	"github.com/jessevdk/go-flags"
 )
 
 // Run will give the appropriate response for the
 // given command for Source |s|.
-func Run(s Source) error {
-	var opts = &protocol.Options{}
-
-	var _, err = flags.Parse(opts)
-	if err != nil {
-		return err
-	}
-
+func Run(s Source, opts protocol.Protocol) error {
 	var out = &types.AirbyteMessage{}
 
 	switch os.Args[1] {
@@ -89,13 +81,11 @@ func Run(s Source) error {
 		panic("unknown command")
 	}
 
-	var b []byte
-	b, err = json.Marshal(out)
+	var b, err = json.Marshal(out)
 	if err != nil {
 		return err
 	}
 
 	_, err = os.Stdout.WriteString(string(b) + "\n")
-	os.Stdout.Close()
 	return err
 }

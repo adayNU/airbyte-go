@@ -5,12 +5,31 @@ import (
 	"os"
 
 	"github.com/adayNU/airbyte-go/types"
+	"github.com/jessevdk/go-flags"
 )
 
 type Options struct {
 	Config  string `long:"config" description:"Path to configuration file"`
 	Catalog string `long:"catalog" description:"Path to catalog file"`
 	State   string `long:"state" description:"Path to state file"`
+}
+
+// Protocol ... (I don't love this name, will brainstorm a better one)
+type Protocol interface {
+	ParsedConfig() (types.JSONData, error)
+	ParsedCatalog() (*types.ConfiguredAirbyteCatalog, error)
+	ParsedState() (types.JSONData, error)
+}
+
+// Init populates the config fields based on the passed arguments.
+func (o *Options) Init() error {
+	var _, err = flags.Parse(o)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 func (o *Options) ParsedConfig() (types.JSONData, error) {
