@@ -6,14 +6,45 @@ import (
 	"github.com/adayNU/airbyte-go/types"
 )
 
+// readResponse receives messages from the Read operation.
+type readResponse struct {
+	recordMessages <-chan *types.AirbyteRecordMessage
+	stateMessages  <-chan *types.AirbyteStateMessage
+	done           <-chan struct{}
+	err            error
+}
+
+func (r *readResponse) Records() <-chan *types.AirbyteRecordMessage {
+	return r.recordMessages
+}
+
+func (r *readResponse) States() <-chan *types.AirbyteStateMessage {
+	return r.stateMessages
+}
+
+func (r *readResponse) Done() <-chan struct{} {
+	return r.done
+}
+
+func (r *readResponse) Err() error {
+	return r.err
+}
+
+type ReadResponse interface {
+	Records() <-chan *types.AirbyteRecordMessage
+	States() <-chan *types.AirbyteStateMessage
+	Done() <-chan struct{}
+	Err() error
+}
+
 type Source interface {
 	Spec() *types.ConnectorSpecification
 	Check(config types.JSONData) *types.AirbyteConnectionStatus
 	Discover(config types.JSONData) *types.AirbyteCatalog
 	// Read reads data from the underlying data source and converts
-	// it into AirbyteRecordMessage (wrapped in an AirbyteMessage).
-	// It can optionally return AirbyteStateMessages, which is used to
-	// track how much of the data source has been synced.
+	// it into AirbyteRecordMessage. It can optionally return
+	// AirbyteStateMessages, which is used to track how much of the
+	// data source has been synced.
 	//
 	// Per the Airbyte documentation: The connector ideally will only pull
 	// the data described in the catalog argument. It is permissible for
@@ -25,8 +56,10 @@ type Source interface {
 	// which this is simply not possible.
 	// 	https://docs.airbyte.io/understanding-airbyte/airbyte-specification#source
 	//
-	// It is Read's responsibility to close the returned channel to signal to
-	// there is no more data to read. Read should close the channel and return
-	// on a canceled context.
-	Read(ctx context.Context, config types.JSONData, catalog *types.ConfiguredAirbyteCatalog, state types.JSONData) <-chan types.AirbyteMessage
+	// It is Read's responsibility to send a message on the done channel to signify
+	// it has completed it's work. If Read encounters an error, it should set the
+	// err field and send on the done channel. A done message should also be sent
+	// on a canceled context / exceeded deadline (with err set to context.Canceled or
+	// context.DeadlineExceeded).
+	Read(ctx context.Context, config types.JSONData, catalog *types.ConfiguredAirbyteCatalog, state types.JSONData) ReadResponse
 }

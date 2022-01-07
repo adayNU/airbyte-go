@@ -54,25 +54,35 @@ func Run(s Source, opts protocol.Protocol) error {
 
 		var ctx = context.Background()
 
-		var messages = s.Read(ctx, cfg, catalog, state)
+		var reader = s.Read(ctx, cfg, catalog, state)
 
 		for {
-			select {
-			case msg, ok := <-messages:
-				if ok {
-					var b []byte
-					b, err = json.Marshal(msg)
-					if err != nil {
-						return nil
-					}
+			var wrapped = &types.AirbyteMessage{}
 
-					_, err = os.Stdout.WriteString(string(b) + "\n")
-					if err != nil {
-						return nil
-					}
-				} else {
-					break
+			select {
+			case msg := <-reader.Records():
+				wrapped = &types.AirbyteMessage{
+					Type:   types.Record,
+					Record: msg,
 				}
+			case msg := <-reader.States():
+				wrapped = &types.AirbyteMessage{
+					Type:  types.State,
+					State: msg,
+				}
+			case <-reader.Done():
+				return reader.Err()
+			}
+
+			var b []byte
+			b, err = json.Marshal(wrapped)
+			if err != nil {
+				return err
+			}
+
+			_, err = os.Stdout.WriteString(string(b) + "\n")
+			if err != nil {
+				return err
 			}
 		}
 

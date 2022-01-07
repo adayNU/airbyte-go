@@ -1,6 +1,10 @@
 package types
 
-import "errors"
+import (
+	"errors"
+
+	"github.com/xeipuuv/gojsonschema"
+)
 
 type AirbyteCatalog struct {
 	Streams []AirbyteStream
@@ -8,7 +12,7 @@ type AirbyteCatalog struct {
 
 type AirbyteStream struct {
 	Name                    string
-	JSONSchema              JSONData
+	JSONSchema              string // Should be a valid JSON schema.
 	SyncModes               []SyncMode
 	SourceDefinedCursor     bool
 	DefaultCursorEndField   []string
@@ -41,6 +45,27 @@ type ConfiguredAirbyteStream struct {
 	CursorField         []string
 	DestinationSyncMode DestinationSyncMode
 	PrimaryKey          [][]string
+
+	loader gojsonschema.JSONLoader
+}
+
+var ErrInvalidMessage = errors.New("invalid message")
+
+func (c *ConfiguredAirbyteStream) ValidateRecordSchema(msg *AirbyteRecordMessage) error {
+	if c.loader == nil {
+		c.loader = gojsonschema.NewStringLoader(c.Stream.JSONSchema)
+	}
+
+	var res, err = gojsonschema.Validate(c.loader, gojsonschema.NewGoLoader(msg.Data))
+	if err != nil {
+		return err
+	}
+
+	if !res.Valid() {
+		return ErrInvalidMessage
+	}
+
+	return nil
 }
 
 // Validate returns an error if |c| is invalid according to the

@@ -48,7 +48,7 @@ func Run(d Destination) error {
 		}
 
 		var messages = make(chan *types.AirbyteMessage)
-		var done = make(chan bool, 1)
+		var done = make(chan error, 1)
 
 		var ctx = context.Background()
 
@@ -56,6 +56,13 @@ func Run(d Destination) error {
 
 		var scanner = bufio.NewScanner(os.Stdin)
 		for {
+			select {
+			case err = <-done:
+				return err
+			default:
+				// Keep running.
+			}
+
 			var msg = &types.AirbyteMessage{}
 
 			var ok = scanner.Scan()
@@ -64,7 +71,10 @@ func Run(d Destination) error {
 				// TODO(Andy): Might want some sort of timeout for Write
 				// gracefully shutting down (i.e. a select on the done channel
 				// as well as a ticker).
-				<-done
+				err = <-done
+				if err != nil {
+					return err
+				}
 
 				if err = scanner.Err(); err != nil {
 					return err

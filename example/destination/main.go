@@ -30,21 +30,18 @@ func (m *mockDestination) Check(types.JSONData) *types.AirbyteConnectionStatus {
 	}
 }
 
-func (m *mockDestination) Write(_ context.Context, _ types.JSONData, _ *types.ConfiguredAirbyteCatalog, messages <-chan *types.AirbyteMessage, done chan<- bool) error {
-exit:
+func (m *mockDestination) Write(_ context.Context, _ types.JSONData, _ *types.ConfiguredAirbyteCatalog, messages <-chan *types.AirbyteMessage, done chan<- error) {
 	for {
 		select {
 		case msg, ok := <-messages:
 			if ok {
-				fmt.Println("test", msg)
+				fmt.Println("test:", msg)
 			} else {
-				done <- true
-				break exit
+				done <- nil
+				return
 			}
 		}
 	}
-
-	return nil
 }
 
 func main() {

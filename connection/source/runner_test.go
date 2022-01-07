@@ -83,9 +83,13 @@ func (m *mockSource) Discover(config types.JSONData) *types.AirbyteCatalog {
 	return &types.AirbyteCatalog{}
 }
 
-func (m *mockSource) Read(ctx context.Context, config types.JSONData, catalog *types.ConfiguredAirbyteCatalog, state types.JSONData) <-chan types.AirbyteMessage {
+func (m *mockSource) Read(ctx context.Context, config types.JSONData, catalog *types.ConfiguredAirbyteCatalog, state types.JSONData) ReadResponse {
 	// Need to do better here.
-	return make(<-chan types.AirbyteMessage)
+	return &readResponse{
+		recordMessages: make(<-chan *types.AirbyteRecordMessage),
+		stateMessages:  make(<-chan *types.AirbyteStateMessage),
+		done:           make(<-chan struct{}),
+	}
 }
 
 type mockProtocol struct{}
